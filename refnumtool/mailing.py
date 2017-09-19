@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/USR169/bin/env python3
 # -*- coding: utf-8 -*-
 
 import csv
@@ -165,8 +165,10 @@ class Mailing():
         fid = open(self.pathid, "r", encoding="utf-16")
         self.nbel = 0 #nb élèves
         LIGNE = fid.readline()
+        # issu de id_extractor.py: choix de séparateur de champ
+        sep = (";" if ";" in LIGNE else ",")
         while LIGNE:
-            TYPE, prenom, nom, login,classe, mdp = LIGNE.split(";")
+            TYPE, prenom, nom, login,classe, mdp = LIGNE.split(sep)
             mdp = mdp[:-1] #enlever le \n final
             if TYPE == "Eleve": # il peut aussi être PersEducNat
                 self.nbel +=1

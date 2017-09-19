@@ -131,3 +131,13 @@ Log
 un fichier de log des mails envoyés est créé dans le même dossier que le
 fichier des profs. La date et l'heure du publipostage apparaissent dans le
 nom du fichier du type *nom_%d%m%Y-%H-%M-%S.log*
+
+Conversion PDF
+^^^^^^^^^^^^^^
+
+Pour les fichiers .odt générés, vous avez peut-être envie de les transformer en
+pdf. Sous linux avec LibreOffice, rien de plus simple::
+
+  libreoffice --convert-to pdf:writer_pdf_Export *.odt
+
+(compléter le nom de programme libreoffice selon votre version)
