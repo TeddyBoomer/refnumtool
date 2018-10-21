@@ -1,6 +1,7 @@
 Historique
 ==========
 
+* 0.8: les pièces jointes des identifiants Tuteurs généraux doivent être en pdf.
 * 0.7: ajout d'une génération des identifiants réseau élèves (Atos) par classe.
   bug fix: adaptation au séparateur de champs dans les csv atos.
 * 0.6: ajout d'un envoi des nouveaux identifiants élèves réseau aux PP.

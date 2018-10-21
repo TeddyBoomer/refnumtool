@@ -38,7 +38,7 @@ txtidnew= ["Bonjour, tu es prof principal de la ",
            "Les nouveaux élèves suivants sont arrivés dans ta classe:\n",
 """Merci de leur transmettre leur identifiant + mot de passe (ENT). 
 Bien cordialement,""",
-           "Voici les identifiants des nouveaux tuteurs dans ta classe.\nBien cordialemnt,"]
+           "Voici les identifiants des nouveaux tuteurs dans ta classe.\nBien cordialement,"]
 
 # lignes de texte pour envoi d'identifiant de nouveaux élèves - réseau pédagogique
 txtidrezonew= ["Bonjour, tu es prof principal de la ",

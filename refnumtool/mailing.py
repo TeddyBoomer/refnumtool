@@ -1,4 +1,4 @@
-#!/USR169/bin/env python3
+#/bin/env python3
 # -*- coding: utf-8 -*-
 
 import csv
@@ -445,7 +445,10 @@ class Mailing():
                 M['To'] = (cfg["default_to"] if cfg["test"] else E["E-mail"])
                 M.attach(MIMEText(msg, 'plain', _charset='utf-8'))
                 #ajouter la pj liée au pp, le nom du fichier doit être:
-                F = join(pathid, "ENT_id_Tuteur_"+E["elycee"]+".odt")
+                # F = join(pathid, "ENT_id_Tuteur_"+E["elycee"]+".odt")
+                # essai en .pdf; 
+                # appliquer le script d'impression vers PDF d'abord
+                F = join(pathid, "ENT_id_Tuteur_"+E["elycee"]+".pdf")
                 #open and join a file
                 ctype = (mimetypes.guess_type(basename(F)))[0]
                 maintype, subtype = ctype.split('/', 1)

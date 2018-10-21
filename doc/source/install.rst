@@ -136,8 +136,32 @@ Conversion PDF
 ^^^^^^^^^^^^^^
 
 Pour les fichiers .odt générés, vous avez peut-être envie de les transformer en
-pdf. Sous linux avec LibreOffice, rien de plus simple::
+pdf. Sous linux avec LibreOffice, rien de plus simple (2 alternatives ici)::
 
   libreoffice --convert-to pdf:writer_pdf_Export *.odt
+  unoconv -f pdf *.odt
 
 (compléter le nom de programme libreoffice selon votre version)
+
+Autre possibilité: imprimer vers une imprimante virtuelle PDF. Sous linux Ubuntu, on installe le paquet `cups-pdf <apt://cups-pdf>`_
+
+**Exemple**: Conversion des documents .odt tuteurs en pdf (2 pages A5 imprimées sur 1 page A4 recto)::
+
+  #!/bin/bash
+  
+  # "refnumODT2PDF" - converts ODT of the directory to PDF for refnumtool
+  unoconv -f pdf ENT_id_Tuteur*.odt
+  for x in `ls ENT_id_Tuteur*.pdf`; do
+      echo "impression $x"
+      lpr -P PDF -o media=a4 -o number-up=2 -o sides=one-sided -o fit-to-page $x
+  done
+  cd ~/PDF
+  for x in `ls $PWD/ENT_id_Tuteur*.pdf`; do
+      nom=${x%%__*}
+      echo "renommage $x → $nom"
+      mv $x $nom
+  done
+
+
+
+  
