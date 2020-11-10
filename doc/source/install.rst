@@ -156,6 +156,8 @@ Autre possibilité: imprimer vers une imprimante virtuelle PDF. Sous linux Ubunt
       lpr -P PDF -o media=a4 -o number-up=2 -o sides=one-sided -o fit-to-page $x
   done
   cd ~/PDF
+  echo "pause 10s pour écouler la file d'impression PDF"
+  sleep 10
   for x in `ls $PWD/ENT_id_Tuteur*.pdf`; do
       nom=${x%%__*}
       echo "renommage $x → $nom"

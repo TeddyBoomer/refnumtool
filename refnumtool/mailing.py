@@ -10,6 +10,7 @@ from os.path import basename, dirname, join, isdir, exists, expanduser
 from os import mkdir, sep
 from yaml import load, dump
 from shutil import copyfile
+from getpass import getpass
 
 from refnumtool.id_extractor import Extractor, ExtractorAtos
 import refnumtool.parametre as param
@@ -248,7 +249,8 @@ class Mailing():
             if "login" not in cfg:
                 cfg["loging"] = input("Entrez votre login sur le serveur "+\
                               cfg["smtp"]+": ")
-            pwd = input("pwd (en clair, dsl) :")
+            # pwd = input("pwd (en clair, dsl) :")
+            pwd = getpass("pwd (valider avec Enter)")
             context = ssl.create_default_context()
             s.starttls(context=context)
             s.login(cfg["login"], pwd)
@@ -407,10 +409,12 @@ class Mailing():
                 M.attach(MIMEText(msg, 'plain', _charset='utf-8'))
                 #ajouter la pj liée au pp, le nom du fichier doit être:
                 F = join(pathid, "ENT_id_Eleve_"+E["elycee"]+".odt")
+                F2 = join(pathid, "ENT_id_Eleve_"+E["elycee"]+".csv")
                 #open and join a file
                 ctype = (mimetypes.guess_type(basename(F)))[0]
                 maintype, subtype = ctype.split('/', 1)
-
+                ctype2 = (mimetypes.guess_type(basename(F)))[0]
+                maintype2, subtype2 = ctype2.split('/', 1)
                 try:
                     with open(F, 'rb') as f:
                         # creation du message
@@ -420,7 +424,13 @@ class Mailing():
                         p.add_header('Content-Disposition', 'attachment',
                                      filename=basename(F))
                         M.attach(p)
-
+                    with open(F2, 'rb') as f2:
+                        p2 = MIMEBase(maintype2, subtype2)
+                        p2.set_payload(f2.read())
+                        encoders.encode_base64(p2)
+                        p2.add_header('Content-Disposition', 'attachment',
+                                     filename=basename(F2))
+                        M.attach(p2)
                     COUNT += 1
                     s.send_message(M)
                     print("1 msg+pj à "+E["Nom"]+" " +E["Prénom"]+ " - " +E["elycee"]+" - "+ M['To'],
