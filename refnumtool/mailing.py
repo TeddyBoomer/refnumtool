@@ -5,6 +5,7 @@ import csv
 import time
 import re
 import tkinter as tk
+from functools import reduce
 from tkinter.filedialog import askopenfilename, askdirectory
 from os.path import basename, dirname, join, isdir, exists, expanduser
 from os import mkdir, sep
@@ -85,17 +86,22 @@ class Mailing():
         """charge les données prof
 
         :param choix: in ["elycee", "quota", "atos"]
+
+        désormais les values de self.PP sont des lists
         """
         #nom de l'entrée csv
         ext = (choix if choix in ["elycee", "atos"] else "scribe")
         # remplissage profs
-        fprof=open(self.pathprof, encoding="utf8")
-        dialect=csv.Sniffer().sniff(fprof.readline())
+        fprof = open(self.pathprof, encoding="utf8")
+        dialect = csv.Sniffer().sniff(fprof.readline())
         fprof.seek(0) # se remettre en début de fichier, le sniff a lu 1 ligne
         reader = csv.DictReader(fprof, dialect=dialect)
         for e in reader:
             if e[ext]:
-                self.PP[e[ext]] = e
+                if e[ext] not in self.PP:
+                    self.PP[e[ext]] = [e]
+                else: # déjà un pp renseigné pour cette classe
+                    self.PP[e[ext]].append(e)
         fprof.close()
 
     def admin_quota(self):
@@ -173,11 +179,13 @@ class Mailing():
             mdp = mdp[:-1] #enlever le \n final
             if TYPE == "Eleve": # il peut aussi être PersEducNat
                 self.nbel +=1
-                if TYPE not in self.PP[classe]:
-                    self.PP[classe][TYPE] =[{'prenom':prenom, 'nom': nom,\
+                # parcourir la liste du/des PP de la classe
+                for prof in self.PP[classe]:
+                    if TYPE not in prof: # self.PP[classe]
+                        prof[TYPE] =[{'prenom':prenom, 'nom': nom,\
                                                   'login':login, 'mdp':mdp}]
-                else:
-                   self.PP[classe][TYPE].append({'prenom':prenom,\
+                    else:
+                        prof[TYPE].append({'prenom':prenom,\
                                                       'nom': nom,\
                                                       'login':login,\
                                                       'mdp':mdp})
@@ -215,7 +223,7 @@ class Mailing():
         self.pathid = askdirectory(title=invite,\
                                    initialdir=self.config["initialdir"],)
         
-    def mailing(self, cible):
+    def mailing(self, cible, filtre_entrants=False):
         """fonction de mailing aux profs principaux
         les paramètres sont lus dans self.config importé de refnumtool.
 
@@ -235,6 +243,7 @@ class Mailing():
         :param port: port value for the relay 587 for secured transaction.
         :type port: int
 
+        ajout d'un filtre des entrants (qui seront dans educonnect) pour idnew idgen et idgentu
         """
 
         cfg = self.config
@@ -287,7 +296,12 @@ class Mailing():
         elif cible == "idnew":
             pathid = dirname(self.pathid)
             # filtrer seulement les élèves pour les pp?
-            pp = [v for v in self.PP.values() if "Eleve" in v]
+            if filtre_entrants:
+                pp = reduce(lambda x,y: x+y, [self.PP[e] for e in self.PP if (e not in cfg["entrants"]) and ("Eleve" in self.PP[e])]) # ajout filtre entrants
+            else:
+                pp = reduce(lambda x,y: x+y,  [v for v in self.PP.values() if ("Eleve" in v)]) # ajout filtre entrants
+                # [self.PP[e] for e in self.PP if "Eleve" in self.PP[e]]
+            # pp = [v for v in self.PP.values() if ("Eleve" in v)]
             COUNT = 0
             COUNTPP = 0
             for E in pp:
@@ -325,7 +339,7 @@ class Mailing():
                 # fichier odt
                 F = join(pathid, "ENT_id_Tuteur_"+E["elycee"]+"_"+time.strftime("%d%m%Y")+".odt")
                 n = len(E["Tuteur"]) # nb nv tuteurs
-                COUNT += n
+                COUNT += n # ne marche pas, double triple si plusieurs pp
                 msg = self.textidnew[0]+E["elycee"]+".\n"
                 msg += self.textidnew[3]
                 msg += "\n"+cfg["sig"]
@@ -361,12 +375,15 @@ class Mailing():
         elif cible == "idrezonew":
             pathid = dirname(self.pathid)
             # filtrer seulement les élèves pour les pp?
-            pp = [v for v in self.PP.values() if "Eleve" in v]
-            COUNT = 0
+            # pp = [v for v in self.PP.values() if "Eleve" in v]
+            pp = reduce(lambda x,y: x+y,
+                        [[prof for prof in self.PP[classe] if "Eleve" in prof]
+                         for classe in self.PP])
+            #COUNT = 0
             COUNTPP = 0
             for E in pp:
                 n = len(E["Eleve"]) # nb nv élèves
-                COUNT += n
+                #COUNT += n
                 msg = self.textidrezonew[0]+E["atos"]+".\n"
                 msg += self.textidrezonew[1]
                 for x in E["Eleve"]:
@@ -387,16 +404,17 @@ class Mailing():
                 except: # catch all exceptions
                     print("Erreur: "+E["Nom"]+" " +E["Prénom"]+ " - " +\
                           M['To'], file=LOG)
-            print(COUNT, "nouveaux élèves", file=LOG)
+            print(self.nbel, "nouveaux élèves", file=LOG)
             print(str(COUNTPP)+" profs contactés (élèves-réseau péda)", file=LOG)
-            print(COUNT, "nouveaux élèves")
+            print(self.nbel, "nouveaux élèves")
             print(str(COUNTPP)+" profs contactés (élèves-réseau péda)")
-
-
 
         elif cible == "idgen":
             pathid = self.pathid
-            pp = [self.PP[e] for e in self.PP]
+            if filtre_entrants:
+                pp = reduce(lambda x,y: x+y, [self.PP[e] for e in self.PP if e not in cfg["entrants"]]) # ajout filtre entrants
+            else:
+                pp = reduce(lambda x,y: x+y, [self.PP[e] for e in self.PP]) # ajout filtre entrants
             COUNT = 0
             for E in pp:
                 msg=self.textidgen[0]+E["elycee"]+".\n"
@@ -443,7 +461,11 @@ class Mailing():
 
         elif cible == "idgentu":
             pathid = self.pathid
-            pp = [self.PP[e] for e in self.PP]
+            if filtre_entrants:
+                pp = reduce(lambda x,y: x+y, [self.PP[e] for e in self.PP if e not in cfg["entrants"]]) # ajout filtre entrants
+            else:
+                pp = reduce(lambda x,y: x+y, [self.PP[e] for e in self.PP]) # ajout filtre entrants
+            # pp = [self.PP[e] for e in self.PP]
             COUNT = 0
             for E in pp:
                 msg=self.textidgen[0]+E["elycee"]+".\n"

@@ -1,5 +1,6 @@
 import tkinter as tk
 import os
+from functools import reduce
 from os.path import basename, dirname, join, isdir, exists, expanduser
 from yaml import load, dump
 from shutil import copyfile
@@ -63,12 +64,13 @@ class refnumTool(tk.Frame):
             self.config = load(conf_file, Loader=Loader)
         print("chargement du fichier des professeurs principaux")    
         self.mailing  = Mailing(self.config)
-        self.options = {'1': self._quota, '2': self._idnew,\
-                        '3': self.mailing.admin_idgen,\
+        self.options = {'1': self._quota, '2': self._idnew,
+                        '3': self.mailing.admin_idgen,
                         '4': self.mailing.admin_idrezogen,
                         '5': self._idgen,
                         '6': self._idgentu, '7': self._idrezonew,
-                        '8': self._exit}
+                        '8': lambda: self._idgen(filtre_entrants=True),
+                        '9': self._exit}
 
         self.__call__()
         
@@ -80,12 +82,13 @@ class refnumTool(tk.Frame):
                  "5: envoi des id élèves globaux aux PP (elycee)",
                  "6: envoi des id tuteurs globaux aux PP (elycee)",
                  "7: envoi des nouveaux id réseau péda. aux pp (atos)",
-                 "8: quitter"]
+                 "8: envoi des id élèves globaux aux PP + filtre no_entrants (elycee)",
+                 "9: quitter"]
         
         print(*choix, sep='\n')
-        IN = input("choisir 1,2,3,4,5,6,7,8 :")
-        while IN not in "12345678":
-            IN = input("choisir 1,2,3,4,5,6,7,8 :")
+        IN = input("choisir 1,2,3,4,5,6,7,8,9 :")
+        while IN not in "123456789":
+            IN = input("choisir 1,2,3,4,5,6,7,8,9 :")
         self.options[IN]()
 
     def init_config(self, val, path):
@@ -132,7 +135,9 @@ class refnumTool(tk.Frame):
 
     def _idrezonew(self):
         self.mailing.admin_idrezonew()
-        pp = [e for e in self.mailing.PP.values() if "Eleve" in e]
+        # réduire la liste de liste des pp
+        pp = reduce(lambda x,y: x+y,
+                    [[prof for prof in self.mailing.PP[classe] if "Eleve" in prof] for classe in self.mailing.PP])
         print(len(pp), " profs à contacter pour élèves - nv id réseau péda.")
         a = input("poursuivre?(o/n) ")
         if a == 'o':
@@ -141,12 +146,15 @@ class refnumTool(tk.Frame):
             self.mailing._save_config()
             self.__call__()
             
-    def _idgen(self):
+    def _idgen(self, filtre_entrants=False):
         self.mailing._set_iddirectory("dossier des identifiants")
         self.mailing._set_prof("elycee")
-        a = input("envoyer les id élèves à tous les PP?(o/n) ")
+        if not(filtre_entrants):
+            a = input("envoyer les id élèves à tous les PP?(o/n) ")
+        else:
+            a = input("envoyer les id élèves à tous les PP des non entrants?(o/n) ")
         if a == 'o':
-            self.mailing.mailing("idgen")
+            self.mailing.mailing("idgen", filtre_entrants=filtre_entrants)
         else:
             self.mailing._save_config()
             self.__call__()
